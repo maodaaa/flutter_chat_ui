@@ -1,8 +1,7 @@
-name: flutter_chat_ui
-version: 2.9.0
+name: flyer_chat_reactions
+version: 0.1.0
 description: >
-  Free and open-source chat SDK. Build fast, real-time apps and generative
-  AI agents with a high-performance, customizable, cross-platform UI.
+  Reaction bubble widgets for Flyer Chat UI components. #chat #ui
 homepage: https://flyer.chat
 repository: https://github.com/flyerhq/flutter_chat_ui
 
@@ -11,15 +10,10 @@ environment:
   flutter: ">=3.29.0"
 
 dependencies:
-  cross_cache: ^1.0.4
-  diffutil_dart: ^4.0.1
   flutter:
     sdk: flutter
   flutter_chat_core: ^2.8.0
-  flyer_chat_reactions:
-    path: ../flyer_chat_reactions
   provider: ^6.1.5
-  scrollview_observer: ^1.26.1
 
 dev_dependencies:
   flutter_lints: ^6.0.0

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
+import 'package:flyer_chat_reactions/flyer_chat_reactions.dart';
 import 'package:provider/provider.dart';
 
 import '../simple_text_message.dart';
@@ -99,6 +100,13 @@ class _ChatMessageInternalState extends State<ChatMessageInternal> {
 
     final groupStatus = _resolveGroupStatus(context);
 
+    final reactionsWidget = _buildMessageReactions(
+      context,
+      builders,
+      _updatedMessage,
+      isSentByMe: isSentByMe,
+    );
+
     final child = _buildMessage(
       context,
       builders,
@@ -124,8 +132,110 @@ class _ChatMessageInternalState extends State<ChatMessageInternal> {
           animation: widget.animation,
           isRemoved: widget.isRemoved,
           groupStatus: groupStatus,
+          bottomWidget: reactionsWidget,
           child: child,
         );
+  }
+
+  Widget? _buildMessageReactions(
+    BuildContext context,
+    Builders builders,
+    Message message, {
+    required bool isSentByMe,
+  }) {
+    final rawReactions = _resolveReactions(message);
+    if (rawReactions == null || rawReactions.isEmpty) {
+      return null;
+    }
+
+    if (builders.messageReactionsBuilder case final reactionBuilder?) {
+      final custom = reactionBuilder(
+        context,
+        message,
+        isSentByMe: isSentByMe,
+      );
+      if (custom != null) {
+        return custom;
+      }
+    }
+
+    final normalized = _normalizeReactions(rawReactions);
+    if (normalized.isEmpty) {
+      return null;
+    }
+
+    return FlyerChatMessageReactions(
+      reactions: normalized,
+      isSentByMe: isSentByMe,
+    );
+  }
+
+  Map<String, List<Object?>>? _resolveReactions(Message message) {
+    return switch (message) {
+      TextMessage(:final reactions?) => _castReactions(reactions),
+      TextStreamMessage(:final reactions?) => _castReactions(reactions),
+      ImageMessage(:final reactions?) => _castReactions(reactions),
+      FileMessage(:final reactions?) => _castReactions(reactions),
+      VideoMessage(:final reactions?) => _castReactions(reactions),
+      AudioMessage(:final reactions?) => _castReactions(reactions),
+      SystemMessage(:final reactions?) => _castReactions(reactions),
+      CustomMessage(:final reactions?) => _castReactions(reactions),
+      UnsupportedMessage(:final reactions?) => _castReactions(reactions),
+    };
+  }
+
+  Map<String, List<Object?>> _castReactions<T>(
+    Map<String, List<T>> reactions,
+  ) {
+    return reactions.map(
+      (key, value) => MapEntry(key, List<Object?>.from(value)),
+    );
+  }
+
+  List<FlyerChatReaction> _normalizeReactions(
+    Map<String, List<Object?>> reactions,
+  ) {
+    final result = <FlyerChatReaction>[];
+
+    reactions.forEach((emoji, users) {
+      final trimmedEmoji = emoji.trim();
+      if (trimmedEmoji.isEmpty) {
+        return;
+      }
+
+      final uniqueUsers = <String>{};
+      for (final user in users) {
+        if (user == null) {
+          continue;
+        }
+        final id = user.toString().trim();
+        if (id.isEmpty) {
+          continue;
+        }
+        uniqueUsers.add(id);
+      }
+
+      if (uniqueUsers.isEmpty) {
+        return;
+      }
+
+      result.add(
+        FlyerChatReaction(
+          emoji: trimmedEmoji,
+          count: uniqueUsers.length,
+        ),
+      );
+    });
+
+    result.sort((a, b) {
+      final countCompare = b.count.compareTo(a.count);
+      if (countCompare != 0) {
+        return countCompare;
+      }
+      return a.emoji.compareTo(b.emoji);
+    });
+
+    return result;
   }
 
   MessageGroupStatus? _resolveGroupStatus(BuildContext context) {

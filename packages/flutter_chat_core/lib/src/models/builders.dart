@@ -124,6 +124,14 @@ typedef ScrollToBottomBuilder =
       VoidCallback onPressed,
     );
 
+/// Signature for building the reactions widget rendered below a message.
+typedef MessageReactionsBuilder =
+    Widget? Function(
+      BuildContext,
+      Message message, {
+      required bool isSentByMe,
+    });
+
 /// Signature for building the loading indicator shown when fetching more messages.
 typedef LoadMoreBuilder = Widget Function(BuildContext);
 
@@ -181,6 +189,9 @@ abstract class Builders with _$Builders {
 
     /// Custom builder for the "scroll to bottom" button.
     ScrollToBottomBuilder? scrollToBottomBuilder,
+
+    /// Custom builder for rendering message reactions.
+    MessageReactionsBuilder? messageReactionsBuilder,
 
     /// Custom builder for the load more indicator.
     LoadMoreBuilder? loadMoreBuilder,
